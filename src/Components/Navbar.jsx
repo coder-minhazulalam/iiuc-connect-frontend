@@ -20,22 +20,6 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close dropdown on outside click
-  // useEffect(() => {
-  //   function handleClickOutside(event) {
-  //     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-  //       setUserDropdownOpen(false);
-  //     }
-  //   }
-  //   document.addEventListener("mousedown", handleClickOutside);
-  //   return () => document.removeEventListener("mousedown", handleClickOutside);
-  // }, []);
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
-
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Network", href: "/network" },
@@ -66,8 +50,12 @@ export default function Navbar() {
               className="w-12 h-12 object-contain"
             />
             <div className="flex flex-col ml-2">
-            <span className="text-xl font-semibold text-slate-700 group-hover:text-blue-900 transition-colors">IIUC Connect</span>
-             <span className="text-[10px] font-normal text-slate-500 group-hover:text-blue-700 transition-colors">Alumni & Student Network</span>
+              <span className="text-xl font-semibold text-slate-700 group-hover:text-blue-900 transition-colors">
+                IIUC Connect
+              </span>
+              <span className="text-[10px] font-normal text-slate-500 group-hover:text-blue-700 transition-colors">
+                Alumni &amp; Student Network
+              </span>
             </div>
           </Link>
 
