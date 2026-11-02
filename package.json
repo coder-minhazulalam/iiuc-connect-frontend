@@ -16,6 +16,7 @@
     "@heroui/styles": "^3.2.7",
     "better-auth": "^1.7.15",
     "dotenv": "^18.0.9",
+    "framer-motion": "^14.9.0",
     "lucide-react": "^1.66.0",
     "mongodb": "^7.8.0",
     "next": "16.4.3",

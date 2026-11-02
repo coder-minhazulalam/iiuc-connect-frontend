@@ -139,7 +139,7 @@ export default function Navbar() {
               /* Guest state: Show Login and Join Community */
               <div className="flex items-center gap-4">
                 <Link
-                  href="/signUp"
+                  href="/signIn"
                   className="text-sm font-medium text-slate-700 hover:text-blue-900 transition-colors px-2 py-1"
                 >
                   Login
