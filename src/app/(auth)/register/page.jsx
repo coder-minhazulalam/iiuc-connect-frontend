@@ -27,8 +27,11 @@ import {
   Layers,
   Sparkles,
 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [role, setRole] = useState("Graduate");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -52,6 +55,7 @@ export default function RegisterPage() {
       designation: "",
       password: "",
       confirmPassword: "",
+
       agreeTerms: false,
     },
     mode: "onChange",
@@ -59,27 +63,107 @@ export default function RegisterPage() {
 
   const passwordValue = watch("password", "");
 
-  // Password validation rules according to prompt:
-  // 1. Must have an uppercase letter
-  // 2. Must have a lowercase letter
-  // 3. Length must be at least 6 characters
   const hasMinLength = passwordValue.length >= 6;
   const hasUppercase = /[A-Z]/.test(passwordValue);
   const hasLowercase = /[a-z]/.test(passwordValue);
 
-  const onSubmit = async (data) => {
-    // Combine selected role with form data
-    const payload = {
-      ...data,
-      role,
-    };
-    console.log("Registration Payload:", payload);
 
-    // Simulate network API submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+const onSubmit = async (data) => {
+  const {
+    fullName,
+    email,
+    avatarUrl,
+    department,
+    graduationYear,
+    batch,
+    currentSemester,
+    designation,
+    password,
+    confirmPassword,
+    agreeTerms,
+  } = data;
+
+
+  // Combine selected role with form data
+  const payload = {
+    ...data,
+    role,
+  };
+
+  console.log("Registration Payload:", payload);
+
+  // Password validation
+  if (password !== confirmPassword) {
+    alert("Passwords do not match!");
+    return;
+  }
+
+  if (!agreeTerms) {
+    alert("Please accept the terms and conditions");
+    return;
+  }
+
+  console.log("data for signup:", data);
+
+  const accountTypeMap = {
+    Graduate: "Alumni",
+    Undergraduate: "undergraduate",
+    Faculty: "faculty",
+  };
+  const mappedAccountType = accountTypeMap[role] || role;
+
+  const { data: signupData, error } = await authClient.signUp.email({
+    name: fullName,
+    image: avatarUrl || undefined,
+    email: email,
+    password: password,
+
+    // Additional User Information
+    batch: batch || undefined,
+    currentSemester: currentSemester || undefined,
+    department: department,
+    designation: designation || undefined,
+    graduationYear: graduationYear || undefined,
+    accountType: mappedAccountType,
+
+    agreeTerms: Boolean(agreeTerms),
+
+    callbackURL: "/",
+  });
+
+  console.log("Register ERROR:", error);
+  console.log("Register DATA:", signupData);
+
+  if (error) {
+    alert(error.message || "Registration failed!");
+    return;
+  }
+
+  if (signupData) {
+    await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/register-complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: signupData.user?.id,
+        name: fullName,
+        email,
+        accountType: mappedAccountType,
+        department,
+        batch: batch || null,
+        currentSemester: currentSemester || null,
+        designation: designation || null,
+        graduationYear: graduationYear || null,
+        agreeTerms: Boolean(agreeTerms),
+      }),
+    });
+
     setIsSuccess(true);
     reset();
-  };
+    router.push("/");
+  }
+};
+
 
   const departments = [
     "Computer Science & Engineering (CSE)",
@@ -150,8 +234,9 @@ export default function RegisterPage() {
                 </span>
               </h1>
               <p className="mt-3 text-xs sm:text-sm text-blue-100/80 leading-relaxed font-light">
-                Step into an empowered ecosystem uniting visionary undergraduates,
-                distinguished alumni, and pioneering faculty across the globe.
+                Step into an empowered ecosystem uniting visionary
+                undergraduates, distinguished alumni, and pioneering faculty
+                across the globe.
               </p>
             </div>
 
@@ -198,7 +283,8 @@ export default function RegisterPage() {
                     14,200+ Verified Alumni
                   </h2>
                   <p className="text-[11px] text-blue-200/70 leading-snug">
-                    Expanding across 42 countries in premier tech companies, academia, and global enterprises.
+                    Expanding across 42 countries in premier tech companies,
+                    academia, and global enterprises.
                   </p>
                 </div>
               </div>
@@ -213,7 +299,8 @@ export default function RegisterPage() {
                     Career Referrals &amp; Mentorship
                   </h2>
                   <p className="text-[11px] text-blue-200/70 leading-snug">
-                    Direct pipeline for internships, thesis co-supervision, competitive mock interviews, and research grants.
+                    Direct pipeline for internships, thesis co-supervision,
+                    competitive mock interviews, and research grants.
                   </p>
                 </div>
               </div>
@@ -228,7 +315,8 @@ export default function RegisterPage() {
                     Lifelong Academic Affiliation
                   </h2>
                   <p className="text-[11px] text-blue-200/70 leading-snug">
-                    Official digitized profile linked directly to your department and verified graduation credentials.
+                    Official digitized profile linked directly to your
+                    department and verified graduation credentials.
                   </p>
                 </div>
               </div>
@@ -248,8 +336,12 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <p className="font-medium text-white text-[11px]">Kumira Permanent Campus</p>
-                <p className="text-[10px] text-blue-200/60">Chattogram, Bangladesh</p>
+                <p className="font-medium text-white text-[11px]">
+                  Kumira Permanent Campus
+                </p>
+                <p className="text-[10px] text-blue-200/60">
+                  Chattogram, Bangladesh
+                </p>
               </div>
             </div>
             <Sparkles className="w-4 h-4 text-blue-300/80" />
@@ -261,7 +353,10 @@ export default function RegisterPage() {
           <div>
             {/* Logo Aligned Center On Top (User Requirement) */}
             <div className="flex flex-col items-center justify-center text-center mb-6">
-              <Link href="/" className="group inline-flex flex-col items-center">
+              <Link
+                href="/"
+                className="group inline-flex flex-col items-center"
+              >
                 <Image
                   src="/official_logo.png"
                   alt="IIUC Connect Official Logo"
@@ -286,7 +381,8 @@ export default function RegisterPage() {
                   Create Your Account
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                  Enter your academic credentials to connect with peers, seniors, and faculties.
+                  Enter your academic credentials to connect with peers,
+                  seniors, and faculties.
                 </p>
               </div>
               <div className="text-xs sm:text-sm text-slate-600 flex-shrink-0">
@@ -305,9 +401,12 @@ export default function RegisterPage() {
               <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-start gap-3 animate-in fade-in">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-semibold text-emerald-900">Registration Successful!</p>
+                  <p className="font-semibold text-emerald-900">
+                    Registration Successful!
+                  </p>
                   <p className="text-xs text-emerald-700 mt-0.5">
-                    Your account has been submitted for university verification. You can now login.
+                    Your account has been submitted for university verification.
+                    You can now login.
                   </p>
                 </div>
               </div>
@@ -329,14 +428,22 @@ export default function RegisterPage() {
                     placeholder="e.g. Minhazul Alam"
                     {...register("fullName", {
                       required: "Full Name is required",
-                      minLength: { value: 3, message: "Name must be at least 3 characters" },
+                      minLength: {
+                        value: 3,
+                        message: "Name must be at least 3 characters",
+                      },
                     })}
-                    className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all ${errors.fullName ? "border-red-400 bg-red-50/20" : "border-slate-200"
-                      }`}
+                    className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all ${
+                      errors.fullName
+                        ? "border-red-400 bg-red-50/20"
+                        : "border-slate-200"
+                    }`}
                   />
                 </div>
                 {errors.fullName && (
-                  <p className="text-xs text-red-500 mt-1 font-medium">{errors.fullName.message}</p>
+                  <p className="text-xs text-red-500 mt-1 font-medium">
+                    {errors.fullName.message}
+                  </p>
                 )}
               </div>
 
@@ -344,7 +451,8 @@ export default function RegisterPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-slate-700">
-                    University / Personal Email <span className="text-red-500">*</span>
+                    University / Personal Email{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
                     Domain verification prioritized
@@ -364,15 +472,20 @@ export default function RegisterPage() {
                         message: "Invalid email address",
                       },
                     })}
-                    className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all ${errors.email ? "border-red-400 bg-red-50/20" : "border-slate-200"
-                      }`}
+                    className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all ${
+                      errors.email
+                        ? "border-red-400 bg-red-50/20"
+                        : "border-slate-200"
+                    }`}
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">
                   University domain (@iiuc.ac.bd) or primary personal email.
                 </p>
                 {errors.email && (
-                  <p className="text-xs text-red-500 mt-1 font-medium">{errors.email.message}</p>
+                  <p className="text-xs text-red-500 mt-1 font-medium">
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
@@ -393,7 +506,8 @@ export default function RegisterPage() {
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  Provide a publicly accessible URL for your profile picture, or update later.
+                  Provide a publicly accessible URL for your profile picture, or
+                  update later.
                 </p>
               </div>
 
@@ -407,42 +521,63 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setRole("Graduate")}
-                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all ${role === "Graduate"
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all ${
+                      role === "Graduate"
                         ? "border-blue-600 bg-blue-50/80 shadow-xs ring-1 ring-blue-600 text-blue-900"
                         : "border-slate-200 bg-slate-50/60 hover:bg-slate-100/70 text-slate-600"
-                      }`}
+                    }`}
                   >
-                    <GraduationCap className={`w-5 h-5 mb-1 ${role === "Graduate" ? "text-blue-700" : "text-slate-500"}`} />
-                    <span className="text-xs font-bold leading-tight">Graduate</span>
-                    <span className="text-[10px] text-slate-500 mt-0.5">Alumni</span>
+                    <GraduationCap
+                      className={`w-5 h-5 mb-1 ${role === "Graduate" ? "text-blue-700" : "text-slate-500"}`}
+                    />
+                    <span className="text-xs font-bold leading-tight">
+                      Graduate
+                    </span>
+                    <span className="text-[10px] text-slate-500 mt-0.5">
+                      Alumni
+                    </span>
                   </button>
 
                   {/* Undergraduate (Current Student) */}
                   <button
                     type="button"
                     onClick={() => setRole("Undergraduate")}
-                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all ${role === "Undergraduate"
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all ${
+                      role === "Undergraduate"
                         ? "border-blue-600 bg-blue-50/80 shadow-xs ring-1 ring-blue-600 text-blue-900"
                         : "border-slate-200 bg-slate-50/60 hover:bg-slate-100/70 text-slate-600"
-                      }`}
+                    }`}
                   >
-                    <BookOpen className={`w-5 h-5 mb-1 ${role === "Undergraduate" ? "text-blue-700" : "text-slate-500"}`} />
-                    <span className="text-xs font-bold leading-tight">Undergraduate</span>
-                    <span className="text-[10px] text-slate-500 mt-0.5">Current Student</span>
+                    <BookOpen
+                      className={`w-5 h-5 mb-1 ${role === "Undergraduate" ? "text-blue-700" : "text-slate-500"}`}
+                    />
+                    <span className="text-xs font-bold leading-tight">
+                      Undergraduate
+                    </span>
+                    <span className="text-[10px] text-slate-500 mt-0.5">
+                      Current Student
+                    </span>
                   </button>
 
                   {/* Faculty (Academic Staff) */}
                   <button
                     type="button"
                     onClick={() => setRole("Faculty")}
-                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all ${role === "Faculty"
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all ${
+                      role === "Faculty"
                         ? "border-blue-600 bg-blue-50/80 shadow-xs ring-1 ring-blue-600 text-blue-900"
                         : "border-slate-200 bg-slate-50/60 hover:bg-slate-100/70 text-slate-600"
-                      }`}
+                    }`}
                   >
-                    <Briefcase className={`w-5 h-5 mb-1 ${role === "Faculty" ? "text-blue-700" : "text-slate-500"}`} />
-                    <span className="text-xs font-bold leading-tight">Faculty</span>
-                    <span className="text-[10px] text-slate-500 mt-0.5">Academic Staff</span>
+                    <Briefcase
+                      className={`w-5 h-5 mb-1 ${role === "Faculty" ? "text-blue-700" : "text-slate-500"}`}
+                    />
+                    <span className="text-xs font-bold leading-tight">
+                      Faculty
+                    </span>
+                    <span className="text-[10px] text-slate-500 mt-0.5">
+                      Academic Staff
+                    </span>
                   </button>
                 </div>
               </div>
@@ -461,7 +596,10 @@ export default function RegisterPage() {
                       </div>
                       <select
                         {...register("graduationYear", {
-                          required: role === "Graduate" ? "Graduation Year is required" : false,
+                          required:
+                            role === "Graduate"
+                              ? "Graduation Year is required"
+                              : false,
                         })}
                         className="w-full pl-9 pr-8 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 appearance-none transition-all cursor-pointer"
                       >
@@ -493,13 +631,16 @@ export default function RegisterPage() {
                         type="text"
                         placeholder="e.g. 45th Batch / Autumn 2018"
                         {...register("batch", {
-                          required: role === "Graduate" ? "Batch is required" : false,
+                          required:
+                            role === "Graduate" ? "Batch is required" : false,
                         })}
                         className="w-full pl-9 pr-4 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all"
                       />
                     </div>
                     {errors.batch && (
-                      <p className="text-xs text-red-500 mt-1 font-medium">{errors.batch.message}</p>
+                      <p className="text-xs text-red-500 mt-1 font-medium">
+                        {errors.batch.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -517,20 +658,35 @@ export default function RegisterPage() {
                     </div>
                     <select
                       {...register("currentSemester", {
-                        required: role === "Undergraduate" ? "Current semester is required" : false,
+                        required:
+                          role === "Undergraduate"
+                            ? "Current semester is required"
+                            : false,
                       })}
                       className="w-full pl-10 pr-8 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 appearance-none transition-all cursor-pointer"
                     >
                       <option value="">Select your current semester</option>
-                      <option value="1st Semester">1st Semester (Freshman)</option>
+                      <option value="1st Semester">
+                        1st Semester (Freshman)
+                      </option>
                       <option value="2nd Semester">2nd Semester</option>
-                      <option value="3rd Semester">3rd Semester (Sophomore)</option>
+                      <option value="3rd Semester">
+                        3rd Semester (Sophomore)
+                      </option>
                       <option value="4th Semester">4th Semester</option>
-                      <option value="5th Semester">5th Semester (Junior)</option>
+                      <option value="5th Semester">
+                        5th Semester (Junior)
+                      </option>
                       <option value="6th Semester">6th Semester</option>
-                      <option value="7th Semester">7th Semester (Senior)</option>
-                      <option value="8th Semester">8th Semester (Final Year)</option>
-                      <option value="Internship / Thesis">Internship / Thesis Phase</option>
+                      <option value="7th Semester">
+                        7th Semester (Senior)
+                      </option>
+                      <option value="8th Semester">
+                        8th Semester (Final Year)
+                      </option>
+                      <option value="Internship / Thesis">
+                        Internship / Thesis Phase
+                      </option>
                     </select>
                   </div>
                   {errors.currentSemester && (
@@ -553,14 +709,21 @@ export default function RegisterPage() {
                     </div>
                     <select
                       {...register("designation", {
-                        required: role === "Faculty" ? "Academic designation is required" : false,
+                        required:
+                          role === "Faculty"
+                            ? "Academic designation is required"
+                            : false,
                       })}
                       className="w-full pl-10 pr-8 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 appearance-none transition-all cursor-pointer"
                     >
                       <option value="">Select academic designation</option>
                       <option value="Professor">Professor</option>
-                      <option value="Associate Professor">Associate Professor</option>
-                      <option value="Assistant Professor">Assistant Professor</option>
+                      <option value="Associate Professor">
+                        Associate Professor
+                      </option>
+                      <option value="Assistant Professor">
+                        Assistant Professor
+                      </option>
                       <option value="Lecturer">Lecturer</option>
                       <option value="Adjunct Faculty">Adjunct Faculty</option>
                     </select>
@@ -586,8 +749,11 @@ export default function RegisterPage() {
                     {...register("department", {
                       required: "Department is required",
                     })}
-                    className={`w-full pl-10 pr-8 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 appearance-none transition-all cursor-pointer ${errors.department ? "border-red-400 bg-red-50/20" : "border-slate-200"
-                      }`}
+                    className={`w-full pl-10 pr-8 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 appearance-none transition-all cursor-pointer ${
+                      errors.department
+                        ? "border-red-400 bg-red-50/20"
+                        : "border-slate-200"
+                    }`}
                   >
                     <option value="">Select your department</option>
                     {departments.map((dept) => (
@@ -597,13 +763,25 @@ export default function RegisterPage() {
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </div>
                 {errors.department && (
-                  <p className="text-xs text-red-500 mt-1 font-medium">{errors.department.message}</p>
+                  <p className="text-xs text-red-500 mt-1 font-medium">
+                    {errors.department.message}
+                  </p>
                 )}
               </div>
 
@@ -629,24 +807,35 @@ export default function RegisterPage() {
                         },
                         validate: {
                           hasUppercase: (v) =>
-                            /[A-Z]/.test(v) || "Must contain at least 1 uppercase letter",
+                            /[A-Z]/.test(v) ||
+                            "Must contain at least 1 uppercase letter",
                           hasLowercase: (v) =>
-                            /[a-z]/.test(v) || "Must contain at least 1 lowercase letter",
+                            /[a-z]/.test(v) ||
+                            "Must contain at least 1 lowercase letter",
                         },
                       })}
-                      className={`w-full pl-10 pr-10 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all ${errors.password ? "border-red-400 bg-red-50/20" : "border-slate-200"
-                        }`}
+                      className={`w-full pl-10 pr-10 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all ${
+                        errors.password
+                          ? "border-red-400 bg-red-50/20"
+                          : "border-slate-200"
+                      }`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                   {errors.password && (
-                    <p className="text-xs text-red-500 mt-1 font-medium">{errors.password.message}</p>
+                    <p className="text-xs text-red-500 mt-1 font-medium">
+                      {errors.password.message}
+                    </p>
                   )}
                 </div>
 
@@ -664,17 +853,27 @@ export default function RegisterPage() {
                       placeholder="••••••••"
                       {...register("confirmPassword", {
                         required: "Please confirm your password",
-                        validate: (val) => val === passwordValue || "Passwords do not match",
+                        validate: (val) =>
+                          val === passwordValue || "Passwords do not match",
                       })}
-                      className={`w-full pl-10 pr-10 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all ${errors.confirmPassword ? "border-red-400 bg-red-50/20" : "border-slate-200"
-                        }`}
+                      className={`w-full pl-10 pr-10 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all ${
+                        errors.confirmPassword
+                          ? "border-red-400 bg-red-50/20"
+                          : "border-slate-200"
+                      }`}
                     />
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
                     >
-                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                   {errors.confirmPassword && (
@@ -689,10 +888,11 @@ export default function RegisterPage() {
               <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
                 {/* 6+ Characters */}
                 <div
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${hasMinLength
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
+                    hasMinLength
                       ? "bg-emerald-50 border-emerald-200 text-emerald-700 font-medium"
                       : "bg-slate-50 border-slate-200 text-slate-500"
-                    }`}
+                  }`}
                 >
                   {hasMinLength ? (
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -704,10 +904,11 @@ export default function RegisterPage() {
 
                 {/* 1+ Uppercase */}
                 <div
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${hasUppercase
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
+                    hasUppercase
                       ? "bg-emerald-50 border-emerald-200 text-emerald-700 font-medium"
                       : "bg-slate-50 border-slate-200 text-slate-500"
-                    }`}
+                  }`}
                 >
                   {hasUppercase ? (
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -719,10 +920,11 @@ export default function RegisterPage() {
 
                 {/* 1+ Lowercase */}
                 <div
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${hasLowercase
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
+                    hasLowercase
                       ? "bg-emerald-50 border-emerald-200 text-emerald-700 font-medium"
                       : "bg-slate-50 border-slate-200 text-slate-500"
-                    }`}
+                  }`}
                 >
                   {hasLowercase ? (
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -739,7 +941,8 @@ export default function RegisterPage() {
                   <input
                     type="checkbox"
                     {...register("agreeTerms", {
-                      required: "You must agree to the guidelines and terms of service",
+                      required:
+                        "You must agree to the guidelines and terms of service",
                     })}
                     className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer w-4 h-4"
                   />
@@ -756,7 +959,9 @@ export default function RegisterPage() {
                   </span>
                 </label>
                 {errors.agreeTerms && (
-                  <p className="text-xs text-red-500 mt-1 font-medium">{errors.agreeTerms.message}</p>
+                  <p className="text-xs text-red-500 mt-1 font-medium">
+                    {errors.agreeTerms.message}
+                  </p>
                 )}
               </div>
 
@@ -783,9 +988,12 @@ export default function RegisterPage() {
               <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-start gap-2.5 text-emerald-900 text-xs leading-relaxed">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                 <p>
-                  <strong className="font-semibold">Institutional Verification:</strong> An
-                  authenticated university crest will be automatically attached to your profile upon
-                  validation against registered student/alumni academic records.
+                  <strong className="font-semibold">
+                    Institutional Verification:
+                  </strong>{" "}
+                  An authenticated university crest will be automatically
+                  attached to your profile upon validation against registered
+                  student/alumni academic records.
                 </p>
               </div>
             </form>
@@ -795,10 +1003,12 @@ export default function RegisterPage() {
           <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-2">
             <div className="flex items-center gap-4">
               <span className="inline-flex items-center gap-1">
-                <Lock className="w-3 h-3 text-slate-400" /> 256-Bit SSL Encrypted
+                <Lock className="w-3 h-3 text-slate-400" /> 256-Bit SSL
+                Encrypted
               </span>
               <span className="inline-flex items-center gap-1">
-                <Building2 className="w-3 h-3 text-slate-400" /> Official University Server
+                <Building2 className="w-3 h-3 text-slate-400" /> Official
+                University Server
               </span>
             </div>
             <a

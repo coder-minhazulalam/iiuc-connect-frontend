@@ -1,15 +1,34 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import NavLink from "./Navlink";
 import Image from "next/image";
+import {
+  Bookmark,
+  MessageSquare,
+  Bell,
+  BadgeCheck,
+  ChevronDown,
+  LayoutDashboard,
+  User,
+  LogOut,
+  Loader2,
+} from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Better Auth session handling
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
 
   // Detect scroll for adaptive glassmorphism depth
   useEffect(() => {
@@ -19,6 +38,46 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSignOut = async () => {
+    setDropdownOpen(false);
+    setMobileMenuOpen(false);
+    await authClient.signOut();
+    router.push("/");
+    router.refresh();
+  };
+
+  const getInitials = (name) => {
+    if (!name) return "MA";
+    const parts = name.trim().split(" ");
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const getSubline = (currentUser) => {
+    if (!currentUser) return "Alumni • CSE '22";
+    const role = currentUser.accountType || currentUser.role || "Alumni";
+    const dept = currentUser.department
+      ? currentUser.department.match(/\(([^)]+)\)/)?.[1] ||
+        currentUser.department.split(" ")[0]
+      : "CSE";
+    const year = currentUser.graduationYear
+      ? `'${String(currentUser.graduationYear).slice(-2)}`
+      : "'22";
+
+    return `${role} • ${dept} ${year}`;
+  };
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -39,9 +98,11 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          
           {/* Left: Brand / Logo */}
-          <Link href="/" className="flex flex-row group items-center justify-center select-none">
+          <Link
+            href="/"
+            className="flex flex-row group items-center justify-center select-none"
+          >
             <Image
               src="/official_logo.png"
               alt="IIUC Connect Logo"
@@ -68,68 +129,167 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* Right: Actions (Login, Join Community, Profile) */}
-          <div className="hidden sm:flex items-center gap-4 lg:gap-5">
-            {/* Login Link */}
-            <Link
-              href="/login"
-              className="text-sm font-medium text-slate-700 hover:text-blue-900 transition-colors px-2 py-1"
-            >
-              Login
-            </Link>
+          {/* Right: Actions (Guest vs Logged In User) */}
+          <div className="hidden sm:flex items-center gap-4">
+            {isPending ? (
+              <div className="w-8 h-8 flex items-center justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+              </div>
+            ) : !user ? (
+              /* Guest state: Show Login and Join Community */
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/signUp"
+                  className="text-sm font-medium text-slate-700 hover:text-blue-900 transition-colors px-2 py-1"
+                >
+                  Login
+                </Link>
 
-            {/* Join Community Button */}
-            <Link
-              href="/register"
-              className="inline-flex items-center justify-center px-5 py-2.5 sm:px-6 sm:py-2.5 rounded-full text-sm font-medium text-white bg-gradient-to-r from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 hover:scale-[1.02] active:scale-95 transition-all duration-200"
-            >
-              Join Community
-            </Link>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center px-5 py-2.5 sm:px-6 sm:py-2.5 rounded-full text-sm font-medium text-white bg-gradient-to-r from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+                >
+                  Join Community
+                </Link>
+              </div>
+            ) : (
+              /* Logged In state: Matches reference image */
+              <div className="flex items-center gap-4">
+                {/* 1. Bookmark Icon */}
+                <button
+                  type="button"
+                  aria-label="Saved items"
+                  className="p-1.5 text-slate-500 hover:text-blue-900 transition-colors cursor-pointer"
+                >
+                  <Bookmark className="w-5 h-5" />
+                </button>
 
-            {/* Profile Avatar Button */}
-            <Link
-              href="/profile"
-              aria-label="User Profile"
-              className="w-10 h-10 rounded-full bg-[#0a1936] text-white flex items-center justify-center hover:bg-[#122855] hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm flex-shrink-0"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-5 h-5"
-              >
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </Link>
+                {/* 2. Messages Icon with Badge '4' */}
+                <button
+                  type="button"
+                  aria-label="Messages"
+                  className="relative p-1.5 text-slate-500 hover:text-blue-900 transition-colors cursor-pointer"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="absolute -top-1 -right-1 bg-[#0f766e] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                    4
+                  </span>
+                </button>
+
+                {/* 3. Notifications Bell Icon with Red Dot */}
+                <button
+                  type="button"
+                  aria-label="Notifications"
+                  className="relative p-1.5 text-slate-500 hover:text-blue-900 transition-colors cursor-pointer"
+                >
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-[#f43f5e] rounded-full border border-white"></span>
+                </button>
+
+                {/* 4. Vertical Divider Line */}
+                <div className="h-6 w-px bg-slate-200 mx-1" />
+
+                {/* 5. User Profile Area with Dropdown */}
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center gap-3 p-1 rounded-2xl hover:bg-slate-100/60 transition-all cursor-pointer group focus:outline-none"
+                    aria-expanded={dropdownOpen}
+                  >
+                    {/* Circle Avatar */}
+                    <div className="relative w-10 h-10 rounded-full border-2 border-[#1e3a8a] p-0.5 flex items-center justify-center bg-white flex-shrink-0 overflow-visible">
+                      <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                        {user.image ? (
+                          <Image
+                            src={user.image}
+                            alt={user.name || "User Avatar"}
+                            fill
+                            unoptimized
+                            className="object-cover rounded-full"
+                          />
+                        ) : (
+                          <span className="text-[#1e3a8a] font-bold text-sm select-none">
+                            {getInitials(user.name)}
+                          </span>
+                        )}
+                      </div>
+                      {/* Green online indicator dot */}
+                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full z-10"></span>
+                    </div>
+
+                    {/* Name & Subtitle */}
+                    <div className="flex flex-col text-left">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-bold text-slate-800 leading-tight">
+                          {user.name || "Minhazul Abedin"}
+                        </span>
+                        <BadgeCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                      </div>
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        {getSubline(user)}
+                      </span>
+                    </div>
+
+                    {/* Chevron Down */}
+                    <ChevronDown
+                      className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
+                        dropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                      <div className="px-4 py-2.5 border-b border-slate-100">
+                        <p className="text-xs font-semibold text-slate-900 truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-[11px] text-slate-500 truncate">
+                          {user.email}
+                        </p>
+                      </div>
+
+                      <div className="py-1">
+                        <Link
+                          href="/dashboard"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:text-blue-900 hover:bg-slate-50 transition-colors"
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-slate-500" />
+                          <span>Dashboard</span>
+                        </Link>
+
+                        <Link
+                          href="/profile"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:text-blue-900 hover:bg-slate-50 transition-colors"
+                        >
+                          <User className="w-4 h-4 text-slate-500" />
+                          <span>My-profile</span>
+                        </Link>
+                      </div>
+
+                      <div className="pt-1 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={handleSignOut}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4 text-rose-500" />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Mobile Menu & Profile Toggle Button */}
+          {/* Mobile Menu Toggle Button */}
           <div className="flex items-center gap-2.5 lg:hidden">
-            <Link
-              href="/profile"
-              aria-label="User Profile"
-              className="w-9 h-9 rounded-full bg-[#0a1936] text-white flex items-center justify-center sm:hidden"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4"
-              >
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </Link>
-
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -170,7 +330,6 @@ export default function Navbar() {
               )}
             </button>
           </div>
-
         </div>
       </div>
 
@@ -191,20 +350,85 @@ export default function Navbar() {
           </nav>
 
           <div className="mt-5 pt-4 border-t border-slate-200/70 flex flex-col gap-3">
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-center py-2 text-sm font-medium text-slate-700 hover:text-blue-900 hover:bg-slate-50 rounded-lg transition-colors"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-center py-2.5 rounded-full text-sm font-medium text-white bg-gradient-to-r from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] shadow-md shadow-blue-500/25 active:scale-95 transition-all duration-200"
-            >
-              Join Community
-            </Link>
+            {!user ? (
+              <>
+                <Link
+                  href="/signUp"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-center py-2 text-sm font-medium text-slate-700 hover:text-blue-900 hover:bg-slate-50 rounded-lg transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-center py-2.5 rounded-full text-sm font-medium text-white bg-gradient-to-r from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] shadow-md shadow-blue-500/25 active:scale-95 transition-all duration-200"
+                >
+                  Join Community
+                </Link>
+              </>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl">
+                  <div className="relative w-10 h-10 rounded-full border-2 border-[#1e3a8a] p-0.5 flex items-center justify-center bg-white flex-shrink-0">
+                    <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                      {user.image ? (
+                        <Image
+                          src={user.image}
+                          alt={user.name || "User Avatar"}
+                          fill
+                          unoptimized
+                          className="object-cover rounded-full"
+                        />
+                      ) : (
+                        <span className="text-[#1e3a8a] font-bold text-sm">
+                          {getInitials(user.name)}
+                        </span>
+                      )}
+                    </div>
+                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full z-10"></span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-bold text-slate-800">
+                        {user.name}
+                      </span>
+                      <BadgeCheck className="w-4 h-4 text-emerald-500" />
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      {getSubline(user)}
+                    </span>
+                  </div>
+                </div>
+
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 py-2 px-3 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  <LayoutDashboard className="w-4 h-4 text-slate-500" />
+                  <span>Dashboard</span>
+                </Link>
+
+                <Link
+                  href="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 py-2 px-3 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  <User className="w-4 h-4 text-slate-500" />
+                  <span>My-profile</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-2.5 py-2 px-3 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4 text-rose-500" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
