@@ -96,32 +96,40 @@ export default function Navbar() {
           : "bg-white/70 backdrop-blur-md border-b border-slate-200/40"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Left: Brand / Logo */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8">
+        {/* Fixed height: h-16 (64px) — compact enough for logged-in user section */}
+        <div className="flex items-center justify-between h-16">
+
+          {/* ── LEFT: Brand / Logo ── */}
           <Link
             href="/"
-            className="flex flex-row group items-center justify-center select-none"
+            className="flex flex-row group items-center justify-center select-none flex-shrink-0"
           >
             <Image
               src="/official_logo.png"
               alt="IIUC Connect Logo"
-              width={40}
-              height={40}
-              className="w-12 h-12 object-contain"
+              width={36}
+              height={36}
+              className="w-9 h-9 object-contain"
             />
-            <div className="flex flex-col ml-2">
-              <span className="text-xl font-semibold text-slate-700 group-hover:text-blue-900 transition-colors">
+            <div className="flex flex-col ml-1.5">
+              <span className="text-base font-bold text-slate-700 group-hover:text-blue-900 transition-colors leading-tight">
                 IIUC Connect
               </span>
-              <span className="text-[10px] font-normal text-slate-500 group-hover:text-blue-700 transition-colors">
+              <span className="text-[9px] font-normal text-slate-500 group-hover:text-blue-700 transition-colors leading-tight">
                 Alumni &amp; Student Network
               </span>
             </div>
           </Link>
 
-          {/* Center: Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-7 xl:gap-8">
+          {/* ── CENTER: Desktop Navigation Links ──
+              When user is logged in → show only at xl (1280px+) to avoid crowding
+              When guest             → show at lg (1024px+) which is fine  */}
+          <nav
+            className={`items-center gap-1 xl:gap-2 ${
+              user ? "hidden xl:flex" : "hidden lg:flex"
+            }`}
+          >
             {navLinks.map((link) => (
               <NavLink key={link.name} href={link.href}>
                 {link.name}
@@ -129,76 +137,76 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* Right: Actions (Guest vs Logged In User) */}
-          <div className="hidden sm:flex items-center gap-4">
+          {/* ── RIGHT: Actions (Guest vs Logged-in) ── */}
+          <div className="hidden sm:flex items-center gap-2">
             {isPending ? (
               <div className="w-8 h-8 flex items-center justify-center">
-                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
               </div>
             ) : !user ? (
-              /* Guest state: Show Login and Join Community */
-              <div className="flex items-center gap-4">
+              /* Guest state */
+              <div className="flex items-center gap-3">
                 <Link
                   href="/signIn"
                   className="text-sm font-medium text-slate-700 hover:text-blue-900 transition-colors px-2 py-1"
                 >
                   Login
                 </Link>
-
                 <Link
                   href="/register"
-                  className="inline-flex items-center justify-center px-5 py-2.5 sm:px-6 sm:py-2.5 rounded-full text-sm font-medium text-white bg-gradient-to-r from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+                  className="inline-flex items-center justify-center px-5 py-2 rounded-full text-sm font-medium text-white bg-gradient-to-r from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 hover:scale-[1.02] active:scale-95 transition-all duration-200"
                 >
                   Join Community
                 </Link>
               </div>
             ) : (
-              /* Logged In state: Matches reference image */
-              <div className="flex items-center gap-4">
-                {/* 1. Bookmark Icon */}
+              /* Logged-in state */
+              <div className="flex items-center gap-1.5">
+
+                {/* 1. Bookmark */}
                 <button
                   type="button"
                   aria-label="Saved items"
-                  className="p-1.5 text-slate-500 hover:text-blue-900 transition-colors cursor-pointer"
+                  className="p-1.5 text-slate-500 hover:text-blue-900 transition-colors cursor-pointer rounded-lg hover:bg-slate-100/60"
                 >
-                  <Bookmark className="w-5 h-5" />
+                  <Bookmark className="w-[18px] h-[18px]" />
                 </button>
 
-                {/* 2. Messages Icon with Badge '4' */}
+                {/* 2. Messages with badge */}
                 <button
                   type="button"
                   aria-label="Messages"
-                  className="relative p-1.5 text-slate-500 hover:text-blue-900 transition-colors cursor-pointer"
+                  className="relative p-1.5 text-slate-500 hover:text-blue-900 transition-colors cursor-pointer rounded-lg hover:bg-slate-100/60"
                 >
-                  <MessageSquare className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 bg-[#0f766e] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                  <MessageSquare className="w-[18px] h-[18px]" />
+                  <span className="absolute -top-0.5 -right-0.5 bg-[#0f766e] text-white text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center shadow-xs">
                     4
                   </span>
                 </button>
 
-                {/* 3. Notifications Bell Icon with Red Dot */}
+                {/* 3. Notifications bell */}
                 <button
                   type="button"
                   aria-label="Notifications"
-                  className="relative p-1.5 text-slate-500 hover:text-blue-900 transition-colors cursor-pointer"
+                  className="relative p-1.5 text-slate-500 hover:text-blue-900 transition-colors cursor-pointer rounded-lg hover:bg-slate-100/60"
                 >
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-[#f43f5e] rounded-full border border-white"></span>
+                  <Bell className="w-[18px] h-[18px]" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-[#f43f5e] rounded-full border border-white"></span>
                 </button>
 
-                {/* 4. Vertical Divider Line */}
-                <div className="h-6 w-px bg-slate-200 mx-1" />
+                {/* 4. Vertical divider */}
+                <div className="h-5 w-px bg-slate-200 mx-0.5" />
 
-                {/* 5. User Profile Area with Dropdown */}
+                {/* 5. User profile dropdown */}
                 <div className="relative" ref={dropdownRef}>
                   <button
                     type="button"
                     onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="flex items-center gap-3 p-1 rounded-2xl hover:bg-slate-100/60 transition-all cursor-pointer group focus:outline-none"
+                    className="flex items-center gap-2 px-1.5 py-1 rounded-xl hover:bg-slate-100/60 transition-all cursor-pointer group focus:outline-none"
                     aria-expanded={dropdownOpen}
                   >
-                    {/* Circle Avatar */}
-                    <div className="relative w-10 h-10 rounded-full border-2 border-[#1e3a8a] p-0.5 flex items-center justify-center bg-white flex-shrink-0 overflow-visible">
+                    {/* Avatar */}
+                    <div className="relative w-8 h-8 rounded-full border-2 border-[#1e3a8a] p-0.5 flex items-center justify-center bg-white flex-shrink-0 overflow-visible">
                       <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center">
                         {user.image ? (
                           <Image
@@ -209,31 +217,31 @@ export default function Navbar() {
                             className="object-cover rounded-full"
                           />
                         ) : (
-                          <span className="text-[#1e3a8a] font-bold text-sm select-none">
+                          <span className="text-[#1e3a8a] font-bold text-xs select-none">
                             {getInitials(user.name)}
                           </span>
                         )}
                       </div>
-                      {/* Green online indicator dot */}
-                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full z-10"></span>
+                      {/* Online dot */}
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full z-10"></span>
                     </div>
 
-                    {/* Name & Subtitle */}
-                    <div className="flex flex-col text-left">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-bold text-slate-800 leading-tight">
-                          {user.name || "Minhazul Abedin"}
+                    {/* Name & subtitle — hidden on screens below lg to save space */}
+                    <div className="hidden lg:flex flex-col text-left">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-bold text-slate-800 leading-tight max-w-[110px] truncate">
+                          {user.name || "Minhazul Alam"}
                         </span>
-                        <BadgeCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                        <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                       </div>
-                      <span className="text-[11px] text-slate-500 font-medium">
+                      <span className="text-[10px] text-slate-500 font-medium max-w-[110px] truncate">
                         {getSubline(user)}
                       </span>
                     </div>
 
-                    {/* Chevron Down */}
+                    {/* Chevron */}
                     <ChevronDown
-                      className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
+                      className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${
                         dropdownOpen ? "rotate-180" : ""
                       }`}
                     />
@@ -267,7 +275,7 @@ export default function Navbar() {
                           className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:text-blue-900 hover:bg-slate-50 transition-colors"
                         >
                           <User className="w-4 h-4 text-slate-500" />
-                          <span>My-profile</span>
+                          <span>My Profile</span>
                         </Link>
                       </div>
 
@@ -288,8 +296,14 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Toggle Button */}
-          <div className="flex items-center gap-2.5 lg:hidden">
+          {/* ── MOBILE HAMBURGER ──
+              When user logged in → show hamburger until xl (1280px)
+              When guest          → show hamburger until lg (1024px)  */}
+          <div
+            className={`flex items-center gap-2.5 ${
+              user ? "xl:hidden" : "lg:hidden"
+            }`}
+          >
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -333,9 +347,13 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Glassmorphism Dropdown */}
+      {/* ── MOBILE MENU DRAWER ── */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white/95 backdrop-blur-xl border-b border-slate-200/80 px-4 pt-3 pb-6 shadow-xl transition-all animate-in fade-in slide-in-from-top-2 duration-200">
+        <div
+          className={`${
+            user ? "xl:hidden" : "lg:hidden"
+          } bg-white/95 backdrop-blur-xl border-b border-slate-200/80 px-4 pt-3 pb-6 shadow-xl transition-all animate-in fade-in slide-in-from-top-2 duration-200`}
+        >
           <nav className="flex flex-col space-y-3">
             {navLinks.map((link) => (
               <NavLink
@@ -353,7 +371,7 @@ export default function Navbar() {
             {!user ? (
               <>
                 <Link
-                  href="/signUp"
+                  href="/signIn"
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-center py-2 text-sm font-medium text-slate-700 hover:text-blue-900 hover:bg-slate-50 rounded-lg transition-colors"
                 >
@@ -369,6 +387,7 @@ export default function Navbar() {
               </>
             ) : (
               <div className="space-y-3">
+                {/* Mobile user info card */}
                 <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl">
                   <div className="relative w-10 h-10 rounded-full border-2 border-[#1e3a8a] p-0.5 flex items-center justify-center bg-white flex-shrink-0">
                     <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center">
@@ -386,7 +405,7 @@ export default function Navbar() {
                         </span>
                       )}
                     </div>
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full z-10"></span>
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full z-10"></span>
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
@@ -416,7 +435,7 @@ export default function Navbar() {
                   className="flex items-center gap-2.5 py-2 px-3 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
                 >
                   <User className="w-4 h-4 text-slate-500" />
-                  <span>My-profile</span>
+                  <span>My Profile</span>
                 </Link>
 
                 <button
